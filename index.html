@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="4IC7XtuWk8p2mBNDLA5lLX">
+<head data-page-node-id="8RsklbHZcucvG0kEJAoyns">
+  <meta charset="UTF-8" data-page-node-id="OFkyCKDGdNLvBlp8pG3s8r">
+  <!-- 适配移动端：让页面在手机上也能按设备宽度正常缩放显示 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="Kkedhh2D0xGMqpsH9BV9Qq">
+  <title>打地鼠 · 工作台小游戏</title>
+  <style>
+    /* ==========================================================
+       一、全局基础样式（CSS Reset + 页面底色）
+       ========================================================== */
+    /* 清除浏览器默认的外边距和内边距，统一盒模型，避免不同浏览器表现不一致 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box; /* 让 width/height 包含内边距和边框，布局更直观 */
+    }
+
+    /* 页面整体：模拟"工作台桌面"的柔和米色底，内容垂直水平居中 */
+    body {
+      min-height: 100vh;                          /* 至少占满一屏高度 */
+      display: flex;                              /* 弹性布局 */
+      justify-content: center;                    /* 水平居中 */
+      align-items: center;                        /* 垂直居中 */
+      background-color: #f3ede2;                  /* 柔和暖米色，桌面质感 */
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif; /* 中文字体优先 */
+      color: #5b4a3f;                             /* 全局文字用暖棕色，与底色协调 */
+      user-select: none;                          /* 禁止选中文字，避免连点时出现蓝色选中效果 */
+    }
+
+    /* ==========================================================
+       二、游戏主卡片：圆角 + 柔和阴影，营造"放在桌面上的卡片"
+       ========================================================== */
+    .game-card {
+      width: min(480px, 92vw);                    /* 限制最大宽度，小屏自适应 */
+      background-color: #fffdf7;                  /* 奶白色卡面，比底色亮一层 */
+      border-radius: 24px;                       /* 大圆角，观感柔和 */
+      box-shadow: 0 12px 32px rgba(120, 90, 60, 0.18); /* 暖棕色柔和投影 */
+      padding: 28px 28px 32px;                    /* 内边距留足呼吸感 */
+      text-align: center;                         /* 卡内文字居中 */
+    }
+
+    /* 游戏标题 */
+    .game-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 4px;                        /* 字间距拉开，更有标题感 */
+      color: #6b5140;
+    }
+
+    /* 标题下的小副标题 */
+    .game-subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #a08a76;
+    }
+
+    /* ==========================================================
+       三、状态面板：得分、倒计时、开始按钮
+       ========================================================== */
+    .panel {
+      display: flex;                              /* 三块内容横向排列 */
+      justify-content: space-between;             /* 两端对齐，中间自动分配 */
+      align-items: center;
+      margin: 20px 4px;
+      background-color: #f6efe3;                  /* 比卡面稍深的浅棕，区分层次 */
+      border-radius: 16px;
+      padding: 12px 18px;
+    }
+
+    /* 面板里每个数据块的通用样式 */
+    .panel-item {
+      display: flex;
+      flex-direction: column;                     /* 标签在上、数值在下 */
+      align-items: center;
+      gap: 2px;
+    }
+
+    /* 数据块上方的小标签文字 */
+    .panel-label {
+      font-size: 12px;
+      color: #a08a76;
+    }
+
+    /* 得分与倒计时的数值，加粗放大突出 */
+    .panel-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #6b5140;
+      font-variant-numeric: tabular-nums;         /* 数字等宽，倒计时不抖动 */
+    }
+
+    /* 开始按钮：柔和珊瑚色，配 hover 悬浮动效 */
+    .btn-start {
+      border: none;                               /* 去掉默认边框 */
+      cursor: pointer;                            /* 鼠标变手指 */
+      font-size: 15px;
+      font-weight: 600;
+      color: #fffdf7;
+      background-color: #e8935a;                  /* 柔和珊瑚橙 */
+      padding: 10px 22px;
+      border-radius: 999px;                       /* 胶囊形按钮 */
+      box-shadow: 0 4px 10px rgba(232, 147, 90, 0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      /* 过渡：悬浮/按下时平滑变化 */
+    }
+
+    /* 按钮 hover 动效：微微上浮 + 阴影加深 + 颜色变亮 */
+    .btn-start:hover {
+      transform: translateY(-2px);
+      background-color: #f0a06a;
+      box-shadow: 0 8px 16px rgba(232, 147, 90, 0.45);
+    }
+
+    /* 按钮按下瞬间的反馈：轻轻压下去 */
+    .btn-start:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(232, 147, 90, 0.4);
+    }
+
+    /* 游戏进行中禁用按钮：降低透明度 + 禁止点击 */
+    .btn-start:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      box-shadow: none;
+      transform: none;
+    }
+
+    /* ==========================================================
+       四、游戏区：3×3 洞穴网格（放在圆角小卡片内部）
+       ========================================================== */
+    .board {
+      display: grid;                              /* 网格布局 */
+      grid-template-columns: repeat(3, 1fr);      /* 3 列等宽 */
+      gap: 16px;                                  /* 洞穴之间的间距 */
+      background-color: #f6efe3;                  /* 与状态面板同色，形成呼应 */
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    /* 单个洞穴容器：overflow 裁剪出"地鼠从洞里钻出来"的效果 */
+    .hole {
+      position: relative;                         /* 作为地鼠的定位基准 */
+      height: 110px;
+      border-radius: 16px;
+      background-color: #eaddc8;                  /* 洞周围的土地色 */
+      overflow: hidden;                           /* 关键：地鼠未出现时被裁剪在洞下 */
+      cursor: pointer;                            /* 提示可以点击 */
+    }
+
+    /* 洞口：用深色椭圆 + 上沿高光模拟"洞" */
+    .hole-mouth {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      width: 78%;
+      height: 34px;
+      background-color: #6b5140;                  /* 深棕色洞口 */
+      border-radius: 50%;                         /* 椭圆形 */
+      box-shadow: inset 0 6px 8px rgba(0, 0, 0, 0.35); /* 内阴影增加洞的深邃感 */
+    }
+
+    /* 洞口上沿的一条浅色高光，让洞更立体 */
+    .hole-mouth::before {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 8%;
+      width: 84%;
+      height: 5px;
+      background-color: #8a6f58;                  /* 比洞口浅一点的土色高光 */
+      border-radius: 50%;
+    }
+
+    /* ==========================================================
+       五、地鼠：全部用纯色 div 拼出来，无任何图片
+       ========================================================== */
+    .mole {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;                               /* 站在洞口位置 */
+      transform: translate(-50%, 110%);           /* 初始状态：整体沉在洞下方（被裁剪看不见） */
+      width: 64px;
+      height: 74px;
+      transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+      /* 弹出动画：带一点回弹的贝塞尔曲线，动作更顺滑自然 */
+    }
+
+    /* 地鼠"冒头"状态：JS 加上 .up 后升出洞口 */
+    .mole.up {
+      transform: translate(-50%, 12%);            /* 保留一点下沉感，像刚钻出来 */
+    }
+
+    /* 地鼠被打中：快速缩小下沉，配合加分反馈 */
+    .mole.hit {
+      transform: translate(-50%, 60%) scale(0.6);
+      transition: transform 0.18s ease-in;        /* 被打要干脆，用快速收缩 */
+    }
+
+    /* 地鼠身体：棕色圆润造型 */
+    .mole-body {
+      width: 100%;
+      height: 100%;
+      background-color: #a9745b;                  /* 地鼠毛色 */
+      border-radius: 46% 46% 40% 40%;             /* 上圆下略平的身体轮廓 */
+      position: relative;
+    }
+
+    /* 地鼠肚子：浅色椭圆贴在身体下半部 */
+    .mole-belly {
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      transform: translateX(-50%);
+      width: 46px;
+      height: 40px;
+      background-color: #d9b49a;                  /* 浅米色肚皮 */
+      border-radius: 50%;
+    }
+
+    /* 眼睛通用：白色眼白 + 黑瞳孔，用两个 div 叠加 */
+    .mole-eye {
+      position: absolute;
+      top: 18px;
+      width: 12px;
+      height: 12px;
+      background-color: #fffdf7;
+      border-radius: 50%;
+    }
+    .mole-eye.left  { left: 15px; }
+    .mole-eye.right { right: 15px; }
+
+    /* 瞳孔：黑色小圆，放在眼白中间 */
+    .mole-eye::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 6px;
+      height: 6px;
+      background-color: #3b2b21;
+      border-radius: 50%;
+    }
+
+    /* 鼻子：粉色小椭圆居中放在眼睛下方 */
+    .mole-nose {
+      position: absolute;
+      top: 34px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 9px;
+      background-color: #e88a8a;                  /* 柔和粉红鼻子 */
+      border-radius: 50%;
+    }
+
+    /* 打中时的"+1"飘分文字：从洞口向上飘并淡出 */
+    .score-pop {
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: 700;
+      color: #4f9d69;                             /* 柔和绿色，表示得分 */
+      animation: popUp 0.6s ease-out forwards;    /* 播放一次上飘动画 */
+      pointer-events: none;                       /* 不挡住点击 */
+    }
+
+    /* "+1" 飘分动画：向上移动同时变透明 */
+    @keyframes popUp {
+      from { opacity: 1; transform: translate(-50%, 0); }
+      to   { opacity: 0; transform: translate(-50%, -26px); }
+    }
+
+    /* ==========================================================
+       六、游戏结束弹窗：半透明遮罩 + 居中小卡片
+       ========================================================== */
+    .modal-mask {
+      position: fixed;                            /* 固定铺满全屏 */
+      inset: 0;                                   /* 上下左右贴边 */
+      background-color: rgba(91, 74, 63, 0.45);   /* 半透明暖棕遮罩 */
+      display: none;                              /* 默认隐藏 */
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    /* 游戏结束时给遮罩加 .show 来显示弹窗 */
+    .modal-mask.show {
+      display: flex;
+    }
+
+    /* 弹窗内容卡片 */
+    .modal-card {
+      background-color: #fffdf7;
+      border-radius: 20px;
+      padding: 32px 44px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(60, 40, 25, 0.3);
+      animation: modalIn 0.3s ease-out;           /* 弹窗出现时轻微放大入场 */
+    }
+
+    /* 弹窗入场动画：由小变大，更柔和 */
+    @keyframes modalIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    /* 弹窗标题 */
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #6b5140;
+      margin-bottom: 10px;
+    }
+
+    /* 弹窗里的最终得分 */
+    .modal-score {
+      font-size: 40px;
+      font-weight: 700;
+      color: #e8935a;
+      margin-bottom: 6px;
+    }
+
+    /* 弹窗里的说明文字 */
+    .modal-tip {
+      font-size: 13px;
+      color: #a08a76;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body data-page-node-id="WDYVPOKwBlZTM3qjFlCuRE">
+
+  <!-- 游戏主卡片：整个游戏内容都装在这张"桌面卡片"里 -->
+  <main class="game-card" data-page-node-id="Z3yxUKS7T5e6zgQmkUFW4E">
+    <!-- 标题区域 -->
+    <h1 class="game-title" data-page-node-id="Jn5JYnoiESeqdJuU69qO5x">🔨 打地鼠</h1>
+    <p class="game-subtitle" data-page-node-id="HNK8YHjiFrgydAfjNL35hO">30 秒内看你能敲中几只地鼠！</p>
+
+    <!-- 状态面板：得分 / 倒计时 / 开始按钮 -->
+    <div class="panel" data-page-node-id="5SAmcOhCNQBRpUbgGO8yPe">
+      <div class="panel-item" data-page-node-id="45zA7mTr7RjBpOPFbprfF7">
+        <span class="panel-label" data-page-node-id="6BfKf2sGptTSXBfGrFfI75">得分</span>
+        <span class="panel-value" id="score" data-page-node-id="v9MGGqb5DG7QTRB1g789zb">0</span>       <!-- 得分数字，JS 实时更新 -->
+      </div>
+      <!-- 开始按钮：点击后启动一局游戏 -->
+      <button class="btn-start" id="startBtn" data-page-node-id="r0XSbGQmQgqngfkyDirdN0">开始游戏</button>
+      <div class="panel-item" data-page-node-id="jOFSyzlG5tX1WsxPDFZkWC">
+        <span class="panel-label" data-page-node-id="HXOndunc8mPmGFuwsYn85c">倒计时</span>
+        <span class="panel-value" id="timer" data-page-node-id="yhrcmhMJTLLqR3Yaz8tzPN">30</span>      <!-- 倒计时数字，JS 每秒更新 -->
+      </div>
+    </div>
+
+    <!-- 游戏区：3 行 × 3 列，共 9 个地鼠洞穴 -->
+    <div class="board" id="board" data-page-node-id="RZVd0JPJGin9j06rV8nByy">
+      <!-- 每个洞口结构相同：洞容器 > 地鼠（身体/肚子/眼睛/鼻子） + 洞口椭圆 -->
+      <!-- 下面用 JS 动态生成 9 个洞，保持 HTML 简洁；结构见 JS 中的 createHole 函数 -->
+    </div>
+  </main>
+
+  <!-- 游戏结束弹窗：遮罩层默认隐藏，倒计时结束后由 JS 显示 -->
+  <div class="modal-mask" id="modalMask" data-page-node-id="zHXPvdpBUGG20NbqdmlbJo">
+    <div class="modal-card" data-page-node-id="MXSRYGVauituGapH250Mxy">
+      <p class="modal-title" data-page-node-id="4XOZJTuf5RdFfVvvBf3nO0">⏰ 时间到！</p>
+      <p class="modal-score" id="finalScore" data-page-node-id="iyHpbPtztFqlSQZSHqPj2D">0</p>          <!-- 最终得分 -->
+      <p class="modal-tip" data-page-node-id="YlkbmgKxrnIJSMS2wZyNJc">本局共敲中以上数量的地鼠</p>
+      <button class="btn-start" id="retryBtn" data-page-node-id="BSRpnBshNBekahAVLQjJ6H">再来一局</button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================
+       打地鼠 · 游戏核心逻辑
+       流程：点开始 -> 30 秒倒计时 + 地鼠随机冒头 -> 点击计分
+             -> 倒计时结束停止游戏并弹窗展示得分
+       ========================================================== */
+
+    // ---------- 1. 获取页面元素引用 ----------
+    const board      = document.getElementById('board');       // 游戏网格容器
+    const scoreEl    = document.getElementById('score');       // 实时得分数字
+    const timerEl    = document.getElementById('timer');       // 倒计时数字
+    const startBtn   = document.getElementById('startBtn');    // 开始按钮
+    const retryBtn   = document.getElementById('retryBtn');    // 弹窗里的再来一局按钮
+    const modalMask  = document.getElementById('modalMask');   // 结束弹窗遮罩
+    const finalScore = document.getElementById('finalScore');  // 弹窗中的最终得分
+
+    // ---------- 2. 游戏状态变量 ----------
+    const GAME_DURATION = 30;     // 一局游戏时长（秒）
+    let score = 0;                // 当前得分
+    let timeLeft = GAME_DURATION; // 剩余秒数
+    let playing = false;          // 是否正在游戏中（防止非游戏时间点击计分）
+    let timerId = null;           // 倒计时定时器的 id（结束时用来清除）
+    let spawnId  = null;          // 地鼠冒头循环定时器的 id
+
+    // ---------- 3. 动态生成 9 个洞穴 ----------
+    /**
+     * 创建一个洞穴节点（含地鼠和洞口）。
+     * 结构：.hole > (.mole > 身体/肚子/左眼/右眼/鼻子) + .hole-mouth
+     * @returns {HTMLElement} 洞穴根元素
+     */
+    function createHole() {
+      const hole = document.createElement('div'); // 洞容器（负责裁剪）
+      hole.className = 'hole';
+
+      // 地鼠容器：通过增减 .up / .hit 类控制冒头和被打动画
+      const mole = document.createElement('div');
+      mole.className = 'mole';
+
+      // 地鼠身体（内部再叠肚子、眼睛、鼻子等纯色装饰件）
+      const body = document.createElement('div');
+      body.className = 'mole-body';
+
+      const belly = document.createElement('div'); // 肚皮
+      belly.className = 'mole-belly';
+      body.appendChild(belly);
+
+      const eyeL = document.createElement('div');  // 左眼
+      eyeL.className = 'mole-eye left';
+      const eyeR = document.createElement('div');  // 右眼
+      eyeR.className = 'mole-eye right';
+      body.appendChild(eyeL);
+      body.appendChild(eyeR);
+
+      const nose = document.createElement('div');  // 鼻子
+      nose.className = 'mole-nose';
+      body.appendChild(nose);
+
+      mole.appendChild(body);
+
+      // 洞口椭圆：放在地鼠之后，层级更高，遮住地鼠"下半身"，营造钻洞效果
+      const mouth = document.createElement('div');
+      mouth.className = 'hole-mouth';
+
+      hole.appendChild(mole);
+      hole.appendChild(mouth);
+
+      // 给地鼠绑定点击事件：命中则加分并让它缩回去
+      mole.addEventListener('click', () => hitMole(mole, hole));
+
+      return hole;
+    }
+
+    // 一次性生成 9 个洞并塞进网格容器
+    for (let i = 0; i < 9; i++) {
+      board.appendChild(createHole());
+    }
+
+    // 收集所有洞穴和地鼠，方便随机挑选
+    const holes = board.querySelectorAll('.hole');
+    const moles = board.querySelectorAll('.mole');
+
+    // ---------- 4. 游戏主流程 ----------
+    /**
+     * 开始一局游戏：重置状态、启动倒计时和地鼠循环。
+     */
+    function startGame() {
+      // 重置本局数据
+      score = 0;
+      timeLeft = GAME_DURATION;
+      playing = true;
+      scoreEl.textContent = '0';
+      timerEl.textContent = timeLeft;
+      startBtn.disabled = true;            // 游戏中禁用开始按钮，避免重复开局
+      modalMask.classList.remove('show');  // 如果弹窗开着，先关掉
+
+      moles.forEach(m => m.classList.remove('up', 'hit')); // 清掉所有地鼠的状态
+
+      // 启动 1 秒一次的倒计时
+      timerId = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) endGame();      // 时间耗尽 -> 结束游戏
+      }, 1000);
+
+      // 立刻冒出第一只地鼠，随后循环随机冒头
+      spawnMole();
+      spawnId = setInterval(spawnMole, 700); // 每 700ms 决定一次冒头，节奏适中
+    }
+
+    /**
+     * 随机挑一个洞让地鼠冒头，停留一小段时间后自动缩回。
+     * 如果该洞地鼠已在洞外，就跳过本轮，避免重复占用。
+     */
+    function spawnMole() {
+      if (!playing) return; // 游戏已结束就不再冒头
+
+      // 从 9 个洞里随机取一个
+      const idx = Math.floor(Math.random() * moles.length);
+      const mole = moles[idx];
+
+      if (mole.classList.contains('up') || mole.classList.contains('hit')) return; // 已占用
+
+      mole.classList.remove('hit');        // 清除上一次的"被打"状态
+      mole.classList.add('up');            // 冒头！（CSS transition 自动播放弹出动画）
+
+      // 随机停留 600~1000ms 后自动缩回，增加游戏变化性
+      const stay = 600 + Math.random() * 400;
+      setTimeout(() => {
+        mole.classList.remove('up');       // 缩回洞里
+      }, stay);
+    }
+
+    /**
+     * 点击命中地鼠：加分、播放"+1"飘字、让地鼠缩回。
+     * @param {HTMLElement} mole 被点的地鼠元素
+     * @param {HTMLElement} hole 地鼠所在的洞穴元素
+     */
+    function hitMole(mole, hole) {
+      if (!playing) return;                          // 非游戏时间点击无效
+      if (!mole.classList.contains('up')) return;    // 没冒头的地鼠点不到（被洞口裁剪）
+
+      score++;                                       // 命中 +1
+      scoreEl.textContent = score;                   // 更新面板得分
+
+      // 在洞里生成一个"+1"飘字，动画播完后自动移除
+      const pop = document.createElement('span');
+      pop.className = 'score-pop';
+      pop.textContent = '+1';
+      hole.appendChild(pop);
+      setTimeout(() => pop.remove(), 600);
+
+      // 地鼠切换到"被打"状态：快速缩小下沉
+      mole.classList.remove('up');
+      mole.classList.add('hit');
+      // 稍后清掉 hit 状态，让下一次冒头动画正常播放
+      setTimeout(() => mole.classList.remove('hit'), 300);
+    }
+
+    /**
+     * 结束游戏：停掉所有定时器，弹窗展示最终得分。
+     */
+    function endGame() {
+      playing = false;
+      clearInterval(timerId);              // 停止倒计时
+      clearInterval(spawnId);              // 停止地鼠冒头循环
+      timerEl.textContent = '0';
+      finalScore.textContent = score;      // 把最终得分写进弹窗
+      modalMask.classList.add('show');     // 显示结束弹窗
+      startBtn.disabled = false;           // 恢复开始按钮（也可点弹窗里的再来一局）
+    }
+
+    // ---------- 5. 事件绑定 ----------
+    startBtn.addEventListener('click', startGame); // 开始按钮 -> 开局
+    retryBtn.addEventListener('click', startGame); // 弹窗按钮 -> 再来一局
+  </script>
+</body>
+</html>
